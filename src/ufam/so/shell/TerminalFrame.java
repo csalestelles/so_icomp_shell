@@ -13,8 +13,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.nio.file.Path;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
@@ -34,10 +37,11 @@ public class TerminalFrame extends JFrame
     private static final long serialVersionUID = 1L;
     private JPanel contentPane;
     private StyledDocument doc;
-    String log;
+    String log, today;
     private JTextField textField;
     File raiz;
     FileOutputStream buffer;
+    Date data;
     
     FileWriter fileWriter;
 	PrintWriter printWriter;
@@ -66,9 +70,7 @@ public class TerminalFrame extends JFrame
         setContentPane(contentPane);
         this.setResizable(false);
  
-		Locale locale = new Locale("pt","BR");
-		GregorianCalendar calendar = new GregorianCalendar(); 
-		SimpleDateFormat formatador = new SimpleDateFormat("dd' de 'MMMMM' de 'yyyy' - 'HH':'mm':'ss'h'",locale);
+		DateFormat formatador = new SimpleDateFormat("dd' de 'MMMMM' de 'yyyy' - 'HH':'mm':'ss'h'");
 //		System.out.println(formatador.format(calendar.getTime()));
         
         JTextPane textPane = new JTextPane();
@@ -91,8 +93,10 @@ public class TerminalFrame extends JFrame
 				
 			} 
         	catch (IOException e) {	e.printStackTrace();}
+        	data = Calendar.getInstance().getTime(); 
+        	today = formatador.format(data);
         	printWriter = new PrintWriter(fileWriter);
-        	printWriter.println("Log Criado" + formatador.format(calendar.getTime())+"\n\n");
+        	printWriter.println("Log Criado" + today +"\n\n");
         	printWriter.flush();
         	
         }
@@ -129,7 +133,9 @@ public class TerminalFrame extends JFrame
                 					sb.append("\n");
                 				}
                 			}
-        					acessaArquivo(comando.getBytes() + "   " + formatador.format(calendar.getTime()) + "\n");
+        					data = Calendar.getInstance().getTime(); 
+        		        	today = formatador.format(data);
+        					acessaArquivo(comando.getBytes() + "   " + today + "\n");
                 			print(comando + "\n" + sb.toString());
         				}
         				else
@@ -144,12 +150,16 @@ public class TerminalFrame extends JFrame
                     					sb.append("\n");
                     				}
                     			}
-                				acessaArquivo(comando.getBytes() + "   " + formatador.format(calendar.getTime()) + "\n");
+                				data = Calendar.getInstance().getTime(); 
+                	        	today = formatador.format(data);
+                				acessaArquivo(comando.getBytes() + "   " + today + "\n");
                     			print(comando + "\n" + sb.toString());
                 			}
                 			else
                 			{
-                				acessaArquivo(comando.getBytes() + "   " + formatador.format(calendar.getTime()) + " erro\n");
+                				data = Calendar.getInstance().getTime(); 
+                	        	today = formatador.format(data);
+                				acessaArquivo(comando.getBytes() + "   " + today + " erro\n");
                 				print(comando + " -- erro ao acessar Diretório");
                 				
                 			}
@@ -164,11 +174,16 @@ public class TerminalFrame extends JFrame
 //        					diretorioInicial.replaceAll("", (novoDiretorio[ultimodir-1]+"/"));
         					lblNewLabel.setText(diretorioInicial.replaceAll(novoDiretorio[ultimodir-1]+"/", ""));
         					diretorioInicial = lblNewLabel.getText();
-        					acessaArquivo(comando.getBytes() + "   " + formatador.format(calendar.getTime()) + "\n");
+        					
+        					data = Calendar.getInstance().getTime(); 
+        		        	today = formatador.format(data);
+        					acessaArquivo(comando.getBytes() + "   " + today + "\n");
         				}
         				else if (comandoInicial[1].equals("~"))
         				{
-        					acessaArquivo(comando.getBytes() + "   " + formatador.format(calendar.getTime()) + "\n");
+        					data = Calendar.getInstance().getTime(); 
+        		        	today = formatador.format(data);
+        					acessaArquivo(comando.getBytes() + "   " + today + "\n");
         					diretorioInicial = "/";
         					lblNewLabel.setText("/");
         				}
@@ -180,12 +195,17 @@ public class TerminalFrame extends JFrame
         						
         						diretorioInicial += comandoInicial[1];
         						lblNewLabel.setText(diretorioInicial);
-        						acessaArquivo(comando + "   " + formatador.format(calendar.getTime()) + "\n");
+        						
+        						data = Calendar.getInstance().getTime(); 
+        			        	today = formatador.format(data);
+        						acessaArquivo(comando + "   " + today + "\n");
         						print("Diretorio " + diretorioInicial + " acessado");
         					}
         					else
         					{
-        						acessaArquivo(comando + "   " + formatador.format(calendar.getTime()) + " error\n");
+        						data = Calendar.getInstance().getTime(); 
+        			        	today = formatador.format(data);
+        						acessaArquivo(comando + "   " + today + " error\n");
         						print(comando + " -- erro ao acessar Diretório");
         					}
         				}
@@ -195,12 +215,16 @@ public class TerminalFrame extends JFrame
         			{
         				if(comandoInicial.length == 1)
         				{
-        					acessaArquivo(comando + "   " + formatador.format(calendar.getTime()) + "\n");
+        					data = Calendar.getInstance().getTime(); 
+        		        	today = formatador.format(data);
+        					acessaArquivo(comando + "   " + today + "\n");
         					print("Diretorio atual /" + diretorioInicial);
         				}
         				else
         				{
-        					acessaArquivo(comando + "   " + formatador.format(calendar.getTime()) + " error\n");
+        					data = Calendar.getInstance().getTime(); 
+        		        	today = formatador.format(data);
+        					acessaArquivo(comando + "   " + today + " error\n");
         					print(comando + " -- erro ao acessar Diretório atual");
         				}
         			}
