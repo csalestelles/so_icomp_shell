@@ -1,6 +1,5 @@
 package ufam.so.shell;
 
-import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -14,14 +13,17 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.nio.file.Path;
+import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Scanner;
-
+import java.util.Locale;
 import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.FileOutputStream;
+
 import javax.swing.JTextField;
 import javax.swing.JLabel;
 import java.awt.Font;
@@ -32,10 +34,13 @@ public class TerminalFrame extends JFrame
     private static final long serialVersionUID = 1L;
     private JPanel contentPane;
     private StyledDocument doc;
-    private int indice = 0;
-    StringBuilder log = new StringBuilder();
+    String log;
     private JTextField textField;
     File raiz;
+    FileOutputStream buffer;
+    
+    FileWriter fileWriter;
+	PrintWriter printWriter;
     
     String diretorioInicial = "/";
 
@@ -45,7 +50,6 @@ public class TerminalFrame extends JFrame
                 try {
                     TerminalFrame terminal = new TerminalFrame();
                     terminal.setVisible(true);
-//                    terminal.print("terminalCaio$ "); // Using print() to print to the "Swing Terminal".
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -61,9 +65,11 @@ public class TerminalFrame extends JFrame
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         this.setResizable(false);
-        
-        Path path = Paths.get("/Users/caiotelles/Desktop/logTerminal.txt");
-        List<String> linhas = Files.readAllLines(path);
+ 
+		Locale locale = new Locale("pt","BR");
+		GregorianCalendar calendar = new GregorianCalendar(); 
+		SimpleDateFormat formatador = new SimpleDateFormat("dd' de 'MMMMM' de 'yyyy' - 'HH':'mm':'ss'h'",locale);
+//		System.out.println(formatador.format(calendar.getTime()));
         
         JTextPane textPane = new JTextPane();
         textPane.setFont(new Font("Menlo", Font.BOLD, 13));
@@ -73,6 +79,23 @@ public class TerminalFrame extends JFrame
         textPane.setBackground(Color.WHITE);
         textPane.setEditable(false);
         contentPane.add(textPane);
+        
+        File diretorioo = new File("/Users/caiotelles/Desktop/Log");
+        if (diretorioo.mkdir())
+        {
+        	File arquivoo = new File(diretorioo, "logTerminal.txt");
+        	try 
+        	{
+				arquivoo.createNewFile();
+				fileWriter = new FileWriter(arquivoo, true);
+				
+			} 
+        	catch (IOException e) {	e.printStackTrace();}
+        	printWriter = new PrintWriter(fileWriter);
+        	printWriter.println("Log Criado" + formatador.format(calendar.getTime())+"\n\n");
+        	printWriter.flush();
+        	
+        }
         
         JLabel lblNewLabel = new JLabel("New label");
         lblNewLabel.setFont(new Font("Iowan Old Style", Font.BOLD, 14));
@@ -106,6 +129,7 @@ public class TerminalFrame extends JFrame
                 					sb.append("\n");
                 				}
                 			}
+        					acessaArquivo(comando.getBytes() + "   " + formatador.format(calendar.getTime()) + "\n");
                 			print(comando + "\n" + sb.toString());
         				}
         				else
@@ -120,11 +144,14 @@ public class TerminalFrame extends JFrame
                     					sb.append("\n");
                     				}
                     			}
+                				acessaArquivo(comando.getBytes() + "   " + formatador.format(calendar.getTime()) + "\n");
                     			print(comando + "\n" + sb.toString());
                 			}
                 			else
                 			{
+                				acessaArquivo(comando.getBytes() + "   " + formatador.format(calendar.getTime()) + " erro\n");
                 				print(comando + " -- erro ao acessar Diretório");
+                				
                 			}
         				}
         			}
@@ -137,10 +164,13 @@ public class TerminalFrame extends JFrame
 //        					diretorioInicial.replaceAll("", (novoDiretorio[ultimodir-1]+"/"));
         					lblNewLabel.setText(diretorioInicial.replaceAll(novoDiretorio[ultimodir-1]+"/", ""));
         					diretorioInicial = lblNewLabel.getText();
+        					acessaArquivo(comando.getBytes() + "   " + formatador.format(calendar.getTime()) + "\n");
         				}
         				else if (comandoInicial[1].equals("~"))
         				{
+        					acessaArquivo(comando.getBytes() + "   " + formatador.format(calendar.getTime()) + "\n");
         					diretorioInicial = "/";
+        					lblNewLabel.setText("/");
         				}
         				else 
         				{
@@ -150,10 +180,12 @@ public class TerminalFrame extends JFrame
         						
         						diretorioInicial += comandoInicial[1];
         						lblNewLabel.setText(diretorioInicial);
+        						acessaArquivo(comando + "   " + formatador.format(calendar.getTime()) + "\n");
         						print("Diretorio " + diretorioInicial + " acessado");
         					}
         					else
         					{
+        						acessaArquivo(comando + "   " + formatador.format(calendar.getTime()) + " error\n");
         						print(comando + " -- erro ao acessar Diretório");
         					}
         				}
@@ -161,7 +193,16 @@ public class TerminalFrame extends JFrame
         			}
         			else if(comandoInicial[0].equals("pwd"))
         			{
-        				print("Diretorio atual /" + diretorioInicial);
+        				if(comandoInicial.length == 1)
+        				{
+        					acessaArquivo(comando + "   " + formatador.format(calendar.getTime()) + "\n");
+        					print("Diretorio atual /" + diretorioInicial);
+        				}
+        				else
+        				{
+        					acessaArquivo(comando + "   " + formatador.format(calendar.getTime()) + " error\n");
+        					print(comando + " -- erro ao acessar Diretório atual");
+        				}
         			}
         			textField.setText("");
         		}
@@ -177,5 +218,23 @@ public class TerminalFrame extends JFrame
             doc.insertString(0, s+"\n", null);
         }
         catch(Exception e) { System.out.println(e); }
+    }
+    
+    private void acessaArquivo(String log)
+    {
+        File diretorioo = new File("/Users/caiotelles/Desktop/Log");
+        if (diretorioo.exists())
+        {
+        	File arquivoo = new File(diretorioo, "logTerminal.txt");
+        	try 
+        	{
+				fileWriter = new FileWriter(arquivoo, true);
+			} 
+        	catch (IOException e) {	e.printStackTrace();}
+        	printWriter = new PrintWriter(fileWriter);
+        }
+        printWriter.println(log);
+		printWriter.flush();
+		printWriter.close();
     }
 }
