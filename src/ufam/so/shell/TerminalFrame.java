@@ -206,6 +206,24 @@ public class TerminalFrame extends JFrame
         				}
         				print("");
         			}
+        			else if(comandoInicial[0].equals("mv") && comandoInicial.length == 3)
+        			{
+        				try 
+        				{
+							if(directory.move(comando))
+							{
+								directory.writeLog(comando, Diretorio.WORKING);
+								print("");
+							}
+							else
+							{
+								directory.writeLog(comando, Diretorio.ERROR);
+								print(comando + " -- erro ao acessar informações");
+							}
+						} 
+        				catch (IOException e1) {e1.printStackTrace();}
+        			}
+        			
         			textField.setText("");
         		}
         	}

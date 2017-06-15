@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -115,9 +117,47 @@ public class Diretorio {
 		return dynamicDir;
 	}
 	
-	public static void main(String[] args)
+	public boolean move(String comand) throws IOException
 	{
-		System.out.println(getDirInicial());
+		String[] splitedComand = comand.split(" ");
+		
+		
+		String[] splitedOriginPath = splitedComand[1].split("/");
+		String firstDir = null;
+		if(splitedOriginPath.length > 1)
+			firstDir = "/" + splitedOriginPath[0] + "/" + splitedOriginPath[1] + "/";
+		else
+			firstDir = "/" + splitedOriginPath[0] + "/";
+		
+		
+		String[] splitedDestinyPath = splitedComand[2].split("/");
+		String lastDir = null;
+		if(splitedDestinyPath.length > 1)
+			lastDir = "/" + splitedDestinyPath[0] + "/" + splitedDestinyPath[1] + "/";
+		else
+			lastDir = "/" + splitedDestinyPath[0] + "/";
+			
+		File destinyPath = null;
+		File file = null;
+		
+		if (lastDir.equals(dirInitial))
+			destinyPath = new File(splitedComand[2]);
+		else
+			destinyPath = new File(getDynamicDir() + splitedComand[2] + "/");
+		
+		if (firstDir.equals(dirInitial))
+			file = new File(splitedComand[1]);
+		else
+			file = new File(getDynamicDir() + splitedComand[1]);
+		
+		if ((file.isFile() || file.isDirectory()) && destinyPath.isDirectory())
+		{
+			String name = file.getName();
+			Files.move(file.toPath(), Paths.get(destinyPath.toString(), name), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			return true;
+		}
+		else
+			return false;
 	}
 
 }
