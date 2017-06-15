@@ -30,6 +30,7 @@ import java.io.FileOutputStream;
 import javax.swing.JTextField;
 import javax.swing.JLabel;
 import java.awt.Font;
+import java.awt.ScrollPane;
 
 public class TerminalFrame extends JFrame
 {
@@ -40,13 +41,11 @@ public class TerminalFrame extends JFrame
     String log, today;
     private JTextField textField;
     File raiz;
-    FileOutputStream buffer;
-    Date data;
+    private ScrollPane terminalScroll;
     
-    FileWriter fileWriter;
-	PrintWriter printWriter;
+    Diretorio directory;
     
-    String diretorioInicial = "/";
+    String directoryString = Diretorio.getDirInicial();
 
     public static void main(String[] args) {
         EventQueue.invokeLater(new Runnable() {
@@ -62,50 +61,41 @@ public class TerminalFrame extends JFrame
     }
 
     public TerminalFrame() throws IOException {
+    	directory = new Diretorio();
         setTitle("Terminal Simulation");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 600, 700);
         contentPane = new JPanel();
+        contentPane.setBackground(Color.BLACK);
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         this.setResizable(false);
  
-		DateFormat formatador = new SimpleDateFormat("dd' de 'MMMMM' de 'yyyy' - 'HH':'mm':'ss'h'");
-//		System.out.println(formatador.format(calendar.getTime()));
-        
+		terminalScroll = new ScrollPane();
+		terminalScroll.setBounds(5, 96, 600, 577);
+		
+		
         JTextPane textPane = new JTextPane();
-        textPane.setFont(new Font("Menlo", Font.BOLD, 13));
-        textPane.setBounds(0, 101, 600, 577);
+        textPane.setFont(new Font("GB18030 Bitmap", Font.BOLD, 13));
+        textPane.setBounds(5, 96, 600, 577);
         contentPane.setLayout(null);
-        textPane.setForeground(Color.BLACK);
-        textPane.setBackground(Color.WHITE);
+        textPane.setForeground(Color.LIGHT_GRAY);
+        textPane.setBackground(Color.BLACK);
         textPane.setEditable(false);
-        contentPane.add(textPane);
-        
-        File diretorioo = new File("/Users/caiotelles/Desktop/Log");
-        if (diretorioo.mkdir())
-        {
-        	File arquivoo = new File(diretorioo, "logTerminal.txt");
-        	try 
-        	{
-				arquivoo.createNewFile();
-				fileWriter = new FileWriter(arquivoo, true);
-				
-			} 
-        	catch (IOException e) {	e.printStackTrace();}
-        	data = Calendar.getInstance().getTime(); 
-        	today = formatador.format(data);
-        	printWriter = new PrintWriter(fileWriter);
-        	printWriter.println("Log Criado" + today +"\n\n");
-        	printWriter.flush();
-        	
-        }
+        terminalScroll.add(textPane);
+        contentPane.add(terminalScroll);
+ 
+        directory.createLog();
         
         JLabel lblNewLabel = new JLabel("New label");
+        lblNewLabel.setForeground(Color.BLACK);
         lblNewLabel.setFont(new Font("Iowan Old Style", Font.BOLD, 14));
-        lblNewLabel.setBounds(16, 67, 352, 16);
+        lblNewLabel.setBounds(16, 67, 578, 16);
         contentPane.add(lblNewLabel);
-        lblNewLabel.setText(" ->    Diretório Raiz '/'");
+        lblNewLabel.setText(Diretorio.getDirInicial());
+        
+        doc = textPane.getStyledDocument();
+        print("");
         
         textField = new JTextField();
         textField.setBounds(6, 29, 588, 26);
@@ -120,12 +110,12 @@ public class TerminalFrame extends JFrame
         		{
         			String comando = textField.getText();
         			String[] comandoInicial = comando.split(" ");
-        			if (comandoInicial[0].equals("ls"))     //listar arquivos e diretorios
+        			if (comandoInicial[0].equals("ls") && comandoInicial.length <= 2)     //listar arquivos e diretorios
         			{
         				StringBuilder sb = new StringBuilder();
         				if(comandoInicial.length == 1)
         				{
-        					raiz = new File(diretorioInicial);
+        					raiz = new File(Diretorio.getDynamicDir());
         					for(File f: raiz.listFiles()) {
                 				if(f.isFile() || f.isDirectory()) 
                 				{
@@ -133,14 +123,12 @@ public class TerminalFrame extends JFrame
                 					sb.append("\n");
                 				}
                 			}
-        					data = Calendar.getInstance().getTime(); 
-        		        	today = formatador.format(data);
-        					acessaArquivo(comando.getBytes() + "   " + today + "\n");
-                			print(comando + "\n" + sb.toString());
+        					directory.writeLog(comando, Diretorio.WORKING);
+                			print("\n" + sb.toString());
         				}
         				else
         				{
-        					raiz = new File(diretorioInicial + comandoInicial[1]);
+        					raiz = new File(Diretorio.getDynamicDir() + comandoInicial[1]);
                 			if (raiz.exists() && raiz.isDirectory())
                 			{
                 				for(File f: raiz.listFiles()) {
@@ -150,62 +138,46 @@ public class TerminalFrame extends JFrame
                     					sb.append("\n");
                     				}
                     			}
-                				data = Calendar.getInstance().getTime(); 
-                	        	today = formatador.format(data);
-                				acessaArquivo(comando.getBytes() + "   " + today + "\n");
-                    			print(comando + "\n" + sb.toString());
+                				directory.writeLog(comando, Diretorio.WORKING);
+                    			print(comandoInicial[1] + "\n" + sb.toString());
                 			}
                 			else
                 			{
-                				data = Calendar.getInstance().getTime(); 
-                	        	today = formatador.format(data);
-                				acessaArquivo(comando.getBytes() + "   " + today + " erro\n");
+                				directory.writeLog(comando, Diretorio.ERROR);
                 				print(comando + " -- erro ao acessar Diretório");
                 				
                 			}
         				}
         			}
-        			else if (comandoInicial[0].equals("nav"))      //nav -> NAVegar no Diretório
+        			else if (comandoInicial[0].equals("nav") && comandoInicial.length <= 2)      //nav -> NAVegar no Diretório
         			{
         				if (comandoInicial[1].equals(".."))
         				{
-        					String[] novoDiretorio = diretorioInicial.split("/");
-        					int ultimodir = novoDiretorio.length;
-//        					diretorioInicial.replaceAll("", (novoDiretorio[ultimodir-1]+"/"));
-        					lblNewLabel.setText(diretorioInicial.replaceAll(novoDiretorio[ultimodir-1]+"/", ""));
-        					diretorioInicial = lblNewLabel.getText();
-        					
-        					data = Calendar.getInstance().getTime(); 
-        		        	today = formatador.format(data);
-        					acessaArquivo(comando.getBytes() + "   " + today + "\n");
+        					lblNewLabel.setText(directory.backToFatherDir(Diretorio.getDynamicDir()));
+        					Diretorio.setDynamicDir(lblNewLabel.getText());
+        					print("");
+        					directory.writeLog(comando, Diretorio.WORKING);
         				}
         				else if (comandoInicial[1].equals("~"))
         				{
-        					data = Calendar.getInstance().getTime(); 
-        		        	today = formatador.format(data);
-        					acessaArquivo(comando.getBytes() + "   " + today + "\n");
-        					diretorioInicial = "/";
-        					lblNewLabel.setText("/");
+        					directory.writeLog(comando, Diretorio.WORKING);
+        					Diretorio.setDynamicDir(Diretorio.getDirInicial());
+        					print("");
+        					lblNewLabel.setText(Diretorio.getDynamicDir());
         				}
         				else 
         				{
-        					File dir = new File("/"+diretorioInicial+comandoInicial[1]+"/");
+        					File dir = new File(Diretorio.getDynamicDir() + comandoInicial[1] + "/");
         					if(dir.exists() && dir.isDirectory())
         					{
-        						
-        						diretorioInicial += comandoInicial[1];
-        						lblNewLabel.setText(diretorioInicial);
-        						
-        						data = Calendar.getInstance().getTime(); 
-        			        	today = formatador.format(data);
-        						acessaArquivo(comando + "   " + today + "\n");
-        						print("Diretorio " + diretorioInicial + " acessado");
+        						Diretorio.setDynamicDir(Diretorio.getDynamicDir() + comandoInicial[1]);
+        						lblNewLabel.setText(Diretorio.getDynamicDir());
+        						directory.writeLog(comando, Diretorio.WORKING);
+        						print("");
         					}
         					else
         					{
-        						data = Calendar.getInstance().getTime(); 
-        			        	today = formatador.format(data);
-        						acessaArquivo(comando + "   " + today + " error\n");
+        						directory.writeLog(comando, Diretorio.ERROR);
         						print(comando + " -- erro ao acessar Diretório");
         					}
         				}
@@ -215,50 +187,46 @@ public class TerminalFrame extends JFrame
         			{
         				if(comandoInicial.length == 1)
         				{
-        					data = Calendar.getInstance().getTime(); 
-        		        	today = formatador.format(data);
-        					acessaArquivo(comando + "   " + today + "\n");
-        					print("Diretorio atual /" + diretorioInicial);
+        					directory.writeLog(comando, Diretorio.WORKING);
+        					print(Diretorio.getDynamicDir());
         				}
         				else
         				{
-        					data = Calendar.getInstance().getTime(); 
-        		        	today = formatador.format(data);
-        					acessaArquivo(comando + "   " + today + " error\n");
+        					directory.writeLog(comando, Diretorio.ERROR);
         					print(comando + " -- erro ao acessar Diretório atual");
         				}
+        			}
+        			else if(comandoInicial[0].equals("clear") && comandoInicial.length == 1)
+        			{
+        				int counterClear = 0;
+        				while(counterClear < 33)
+        				{
+        					printClear();
+        					counterClear++;
+        				}
+        				print("");
         			}
         			textField.setText("");
         		}
         	}
         });
         
-        doc = textPane.getStyledDocument();
-        
     }
 
     public void print(String s) {
-        try {
-            doc.insertString(0, s+"\n", null);
+        try 
+        {
+        	Diretorio dirInfo = new Diretorio();
+            doc.insertString(0, dirInfo.setTerminalInfo() + " " + s +"\n", null);
+        }
+        catch(Exception e) { System.out.println(e); }
+    }
+    public void printClear() {
+        try 
+        {
+            doc.insertString(0, "\n", null);
         }
         catch(Exception e) { System.out.println(e); }
     }
     
-    private void acessaArquivo(String log)
-    {
-        File diretorioo = new File("/Users/caiotelles/Desktop/Log");
-        if (diretorioo.exists())
-        {
-        	File arquivoo = new File(diretorioo, "logTerminal.txt");
-        	try 
-        	{
-				fileWriter = new FileWriter(arquivoo, true);
-			} 
-        	catch (IOException e) {	e.printStackTrace();}
-        	printWriter = new PrintWriter(fileWriter);
-        }
-        printWriter.println(log);
-		printWriter.flush();
-		printWriter.close();
-    }
 }
