@@ -6,24 +6,32 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.StyledDocument;
 
+import java.io.InputStream;
+
 import javax.swing.JTextPane;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.Scanner;
 import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 
@@ -108,12 +116,12 @@ public class TerminalFrame extends JFrame
         	{
         		if(e.getKeyCode() == KeyEvent.VK_ENTER)
         		{
-        			String comando = textField.getText();
-        			String[] comandoInicial = comando.split(" ");
-        			if (comandoInicial[0].equals("ls") && comandoInicial.length <= 2)     //listar arquivos e diretorios
+        			String command = textField.getText();
+        			String[] initialCommand = command.split(" ");
+        			if (initialCommand[0].equals("ls") && initialCommand.length <= 2)     //listar arquivos e diretorios
         			{
         				StringBuilder sb = new StringBuilder();
-        				if(comandoInicial.length == 1)
+        				if(initialCommand.length == 1)
         				{
         					raiz = new File(Diretorio.getDynamicDir());
         					for(File f: raiz.listFiles()) {
@@ -123,12 +131,12 @@ public class TerminalFrame extends JFrame
                 					sb.append("\n");
                 				}
                 			}
-        					directory.writeLog(comando, Diretorio.WORKING);
+        					directory.writeLog(command, Diretorio.WORKING);
                 			print("\n" + sb.toString());
         				}
         				else
         				{
-        					raiz = new File(Diretorio.getDynamicDir() + comandoInicial[1]);
+        					raiz = new File(Diretorio.getDynamicDir() + initialCommand[1]);
                 			if (raiz.exists() && raiz.isDirectory())
                 			{
                 				for(File f: raiz.listFiles()) {
@@ -138,65 +146,65 @@ public class TerminalFrame extends JFrame
                     					sb.append("\n");
                     				}
                     			}
-                				directory.writeLog(comando, Diretorio.WORKING);
-                    			print(comandoInicial[1] + "\n" + sb.toString());
+                				directory.writeLog(command, Diretorio.WORKING);
+                    			print(initialCommand[1] + "\n" + sb.toString());
                 			}
                 			else
                 			{
-                				directory.writeLog(comando, Diretorio.ERROR);
-                				print(comando + " -- erro ao acessar Diretório");
+                				directory.writeLog(command, Diretorio.ERROR);
+                				print(command + " -- erro ao acessar Diretório");
                 				
                 			}
         				}
         			}
-        			else if (comandoInicial[0].equals("nav") && comandoInicial.length <= 2)      //nav -> NAVegar no Diretório
+        			else if (initialCommand[0].equals("cd") && initialCommand.length <= 2)      //nav -> NAVegar no Diretório
         			{
-        				if (comandoInicial[1].equals(".."))
+        				if (initialCommand[1].equals(".."))
         				{
         					lblNewLabel.setText(directory.backToFatherDir(Diretorio.getDynamicDir()));
         					Diretorio.setDynamicDir(lblNewLabel.getText());
         					print("");
-        					directory.writeLog(comando, Diretorio.WORKING);
+        					directory.writeLog(command, Diretorio.WORKING);
         				}
-        				else if (comandoInicial[1].equals("~"))
+        				else if (initialCommand[1].equals("~"))
         				{
-        					directory.writeLog(comando, Diretorio.WORKING);
+        					directory.writeLog(command, Diretorio.WORKING);
         					Diretorio.setDynamicDir(Diretorio.getDirInicial());
         					print("");
         					lblNewLabel.setText(Diretorio.getDynamicDir());
         				}
         				else 
         				{
-        					File dir = new File(Diretorio.getDynamicDir() + comandoInicial[1] + "/");
+        					File dir = new File(Diretorio.getDynamicDir() + initialCommand[1] + "/");
         					if(dir.exists() && dir.isDirectory())
         					{
-        						Diretorio.setDynamicDir(Diretorio.getDynamicDir() + comandoInicial[1]);
+        						Diretorio.setDynamicDir(Diretorio.getDynamicDir() + initialCommand[1]);
         						lblNewLabel.setText(Diretorio.getDynamicDir());
-        						directory.writeLog(comando, Diretorio.WORKING);
+        						directory.writeLog(command, Diretorio.WORKING);
         						print("");
         					}
         					else
         					{
-        						directory.writeLog(comando, Diretorio.ERROR);
-        						print(comando + " -- erro ao acessar Diretório");
+        						directory.writeLog(command, Diretorio.ERROR);
+        						print(command + " -- erro ao acessar Diretório");
         					}
         				}
         					
         			}
-        			else if(comandoInicial[0].equals("pwd"))
+        			else if(initialCommand[0].equals("pwd"))
         			{
-        				if(comandoInicial.length == 1)
+        				if(initialCommand.length == 1)
         				{
-        					directory.writeLog(comando, Diretorio.WORKING);
+        					directory.writeLog(command, Diretorio.WORKING);
         					print(Diretorio.getDynamicDir());
         				}
         				else
         				{
-        					directory.writeLog(comando, Diretorio.ERROR);
-        					print(comando + " -- erro ao acessar Diretório atual");
+        					directory.writeLog(command, Diretorio.ERROR);
+        					print(command + " -- erro ao acessar Diretório atual");
         				}
         			}
-        			else if(comandoInicial[0].equals("clear") && comandoInicial.length == 1)
+        			else if(initialCommand[0].equals("clear") && initialCommand.length == 1)
         			{
         				int counterClear = 0;
         				while(counterClear < 33)
@@ -206,24 +214,78 @@ public class TerminalFrame extends JFrame
         				}
         				print("");
         			}
-        			else if(comandoInicial[0].equals("mv") && comandoInicial.length == 3)
+        			else if(initialCommand[0].equals("mv") && initialCommand.length == 3)
         			{
         				try 
         				{
-							if(directory.move(comando))
+							if(directory.move(command))
 							{
-								directory.writeLog(comando, Diretorio.WORKING);
+								directory.writeLog(command, Diretorio.WORKING);
 								print("");
 							}
 							else
 							{
-								directory.writeLog(comando, Diretorio.ERROR);
-								print(comando + " -- erro ao acessar informações");
+								directory.writeLog(command, Diretorio.ERROR);
+								print(command + " -- erro ao acessar informações");
 							}
 						} 
         				catch (IOException e1) {e1.printStackTrace();}
         			}
         			
+        			
+        			
+        			/*
+        			 * A PARTIR DESSE BLOCO ELSE TRATA A EXECUCAO DOS OUTROS COMANDOS DO TERMINAL E EXECUÇAO DE PROGRAMAS
+        			 * Codigos da internet
+        			 */
+        			else if (initialCommand.length == 1)
+        			{
+        				try 
+        				{
+							Process process = Runtime.getRuntime().exec("/Users/caiotelles/Applications/" + command);
+        				}
+						catch (IOException e1){ e1.printStackTrace(); print(command + " -- comando apresenta erro"); 
+																	directory.writeLog(command, Diretorio.ERROR);}
+        				
+        			}
+        			
+        			else
+        			{  
+        				BufferedReader reader = null;
+        				try 
+        				{
+        					ArrayList<String> commandTerminal = new ArrayList<String>();
+        					commandTerminal.add("/bin/bash");
+        					commandTerminal.add("-c");
+        					commandTerminal.add(command);
+        					ProcessBuilder p = new ProcessBuilder(commandTerminal);
+        					Process process = p.start();
+        					InputStream input = process.getInputStream();
+        					InputStreamReader inputReader = new InputStreamReader(input);
+        					reader = new BufferedReader(inputReader);
+        					
+        					String line = null;
+        					while((line = reader.readLine()) != null)
+        					{
+        						print("\n" + line);
+        					}
+							directory.writeLog(command, Diretorio.WORKING);
+
+						} 
+        				catch (IOException e1) {e1.printStackTrace(); print(command + " -- comando apresenta erro"); 
+        															directory.writeLog(command, Diretorio.ERROR);}
+        				finally 
+        				{
+        		            secureClose(reader);
+        		        }
+        				
+        				
+        				/*
+        				 * ATÉ AQUI
+        				 */
+        				
+        				
+        			}
         			textField.setText("");
         		}
         	}
@@ -239,12 +301,23 @@ public class TerminalFrame extends JFrame
         }
         catch(Exception e) { System.out.println(e); }
     }
+    
     public void printClear() {
         try 
         {
             doc.insertString(0, "\n", null);
         }
         catch(Exception e) { System.out.println(e); }
+    }
+    
+    private void secureClose(final Closeable resource) {
+        try {
+            if (resource != null) {
+                resource.close();
+            }
+        } catch (IOException ex) {
+            System.out.println("Erro = " + ex.getMessage());
+        }
     }
     
 }
