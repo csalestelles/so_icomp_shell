@@ -3,7 +3,11 @@ package ufam.so.shell;
 import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.Document;
 import javax.swing.text.StyledDocument;
 
 import java.io.InputStream;
@@ -27,7 +31,10 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
@@ -38,6 +45,7 @@ import java.io.FileOutputStream;
 import javax.swing.JTextField;
 import javax.swing.JLabel;
 import java.awt.Font;
+import java.awt.Point;
 import java.awt.ScrollPane;
 
 public class TerminalFrame extends JFrame
@@ -45,11 +53,15 @@ public class TerminalFrame extends JFrame
 
     private static final long serialVersionUID = 1L;
     private JPanel contentPane;
-    private StyledDocument doc;
+    private Document doc;
     String log, today;
     private JTextField textField;
     File raiz;
+    
     private ScrollPane terminalScroll;
+    int POSICAO_SCROLL_X = 0;
+    int POSICAO_SCROLL_Y = 0;
+    private JScrollBar verticalBar, horizontalBar;
     
     Diretorio directory;
     
@@ -70,45 +82,47 @@ public class TerminalFrame extends JFrame
 
     public TerminalFrame() throws IOException {
     	directory = new Diretorio();
-        setTitle("Terminal Simulation");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 600, 700);
-        contentPane = new JPanel();
-        contentPane.setBackground(Color.BLACK);
-        contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-        setContentPane(contentPane);
-        this.setResizable(false);
- 
-		terminalScroll = new ScrollPane();
-		terminalScroll.setBounds(5, 96, 600, 577);
+    	setForeground(Color.WHITE);
+		setTitle("JavaTerminal");
+		setBackground(Color.DARK_GRAY);
+		getContentPane().setBackground(Color.WHITE);
+		getContentPane().setLayout(new BorderLayout(0, 0));
 		
+		textField = new JTextField();
 		
-        JTextPane textPane = new JTextPane();
-        textPane.setFont(new Font("GB18030 Bitmap", Font.BOLD, 13));
-        textPane.setBounds(5, 96, 600, 577);
-        contentPane.setLayout(null);
-        textPane.setForeground(Color.LIGHT_GRAY);
-        textPane.setBackground(Color.BLACK);
-        textPane.setEditable(false);
-        terminalScroll.add(textPane);
-        contentPane.add(terminalScroll);
- 
+		getContentPane().add(textField, BorderLayout.NORTH);
+		textField.setColumns(10);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setViewportBorder(null);
+		getContentPane().add(scrollPane, BorderLayout.CENTER);
+		
+		JTextArea textArea = new JTextArea();
+		textArea.setEditable(false);
+		textArea.setTabSize(4);
+		textArea.setBackground(Color.WHITE);
+		scrollPane.setViewportView(textArea);
+		setBounds(100, 100, 450, 300);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		horizontalBar = scrollPane.getHorizontalScrollBar();
+        verticalBar = scrollPane.getVerticalScrollBar();
+		
         directory.createLog();
         
-        JLabel lblNewLabel = new JLabel("New label");
-        lblNewLabel.setForeground(Color.BLACK);
-        lblNewLabel.setFont(new Font("Iowan Old Style", Font.BOLD, 14));
-        lblNewLabel.setBounds(16, 67, 578, 16);
-        contentPane.add(lblNewLabel);
+        JLabel lblNewLabel = new JLabel();
+		lblNewLabel.setFont(new Font("Dialog", Font.PLAIN, 12));
+		lblNewLabel.setBackground(Color.WHITE);
+		scrollPane.setColumnHeaderView(lblNewLabel);
         lblNewLabel.setText(Diretorio.getDirInicial());
         
-        doc = textPane.getStyledDocument();
+        doc = textArea.getDocument();
         print("");
         
-        textField = new JTextField();
-        textField.setBounds(6, 29, 588, 26);
-        contentPane.add(textField);
-        textField.setColumns(10);
+//        textField = new JTextField();
+//        textField.setBounds(6, 29, 588, 26);
+//        contentPane.add(textField);
+//        textField.setColumns(10);
         textField.addKeyListener(new KeyAdapter()
         {
         	@Override
@@ -125,7 +139,8 @@ public class TerminalFrame extends JFrame
         				{
         					raiz = new File(Diretorio.getDynamicDir());
         					for(File f: raiz.listFiles()) {
-                				if(f.isFile() || f.isDirectory()) 
+        						String dot = f.getName().substring(0, 1);
+                				if((f.isFile() || f.isDirectory()) && !dot.equals(".")) 
                 				{
                 					sb.append(" -" + f.getName());
                 					sb.append("\n");
@@ -236,58 +251,76 @@ public class TerminalFrame extends JFrame
         			
         			/*
         			 * A PARTIR DESSE BLOCO ELSE TRATA A EXECUCAO DOS OUTROS COMANDOS DO TERMINAL E EXECUÇAO DE PROGRAMAS
-        			 * Codigos da internet
+        			 * 
         			 */
         			else if (initialCommand.length == 1)
         			{
-        				try 
-        				{
-							Process process = Runtime.getRuntime().exec("/Users/caiotelles/Applications/" + command);
-        				}
-						catch (IOException e1){ e1.printStackTrace(); print(command + " -- comando apresenta erro"); 
-																	directory.writeLog(command, Diretorio.ERROR);}
         				
-        			}
+        				try {
+    						Process p = Runtime.getRuntime().exec(textField.getText().toString());
+    						
+    						StringBuffer str = new StringBuffer();
+    			            BufferedReader in = new BufferedReader(new InputStreamReader(
+    			                    p.getInputStream()));
+    			            String line;
+    			            
+    			            BufferedReader erro = new BufferedReader(new InputStreamReader(
+    			                    p.getErrorStream()));
+    			            String linee;
+    			            
+    			            while (p.isAlive()) {
+    			            	while((line = in.readLine()) != null) {
+    			            		str.append(line + "\n");
+    			            		//textArea.append(line + " ");
+    			            	}
+    			                while((linee = erro.readLine()) != null) {
+    			                	str.append(linee + "\n");
+    			            		//textArea.append(line + " ");
+    			                }
+    			            }
+    			            textArea.append(str.toString() + " ");
+    			            textField.selectAll();
+    					} catch (IOException e1) {
+    						// TODO Auto-generated catch block
+    						System.out.print(e1.getMessage());
+    					}
+    					
+    				}
         			
-        			else
-        			{  
-        				BufferedReader reader = null;
-        				try 
-        				{
-        					ArrayList<String> commandTerminal = new ArrayList<String>();
-        					commandTerminal.add("/bin/bash");
-        					commandTerminal.add("-c");
-        					commandTerminal.add(command);
-        					ProcessBuilder p = new ProcessBuilder(commandTerminal);
-        					Process process = p.start();
-        					InputStream input = process.getInputStream();
-        					InputStreamReader inputReader = new InputStreamReader(input);
-        					reader = new BufferedReader(inputReader);
-        					
-        					String line = null;
-        					while((line = reader.readLine()) != null)
-        					{
-        						print("\n" + line);
-        					}
-							directory.writeLog(command, Diretorio.WORKING);
-
-						} 
-        				catch (IOException e1) {e1.printStackTrace(); print(command + " -- comando apresenta erro"); 
-        															directory.writeLog(command, Diretorio.ERROR);}
-        				finally 
-        				{
-        		            secureClose(reader);
-        		        }
-        				
-        				
         				/*
         				 * ATÉ AQUI
         				 */
-        				
-        				
-        			}
+        			verticalBar.setValue(verticalBar.getMinimum());
+        			
         			textField.setText("");
         		}
+    			verticalBar.setValue(verticalBar.getMinimum());
+    			
+        		
+        		List<String> comandosExecutados = new ArrayList<String>();
+				comandosExecutados.add("comando 1");
+				comandosExecutados.add("comando 2");
+				int NumComExec = comandosExecutados.size();
+					
+        		
+        		if(e.getKeyCode() == KeyEvent.VK_UP) {
+					if(0 < NumComExec) {
+						textField.setText(comandosExecutados.get(NumComExec-1));
+						NumComExec = NumComExec -1;
+						//System.out.println(NumComExec);
+					}
+				}
+				if(e.getKeyCode() == KeyEvent.VK_DOWN) {
+					if(NumComExec +1 < comandosExecutados.size()) {
+						NumComExec = NumComExec +1;
+						//System.out.println(NumComExec);
+						textField.setText(comandosExecutados.get(NumComExec));
+					}
+					else {
+						textField.setText("");
+						NumComExec = comandosExecutados.size();
+					}
+				}
         	}
         });
         
@@ -308,16 +341,6 @@ public class TerminalFrame extends JFrame
             doc.insertString(0, "\n", null);
         }
         catch(Exception e) { System.out.println(e); }
-    }
-    
-    private void secureClose(final Closeable resource) {
-        try {
-            if (resource != null) {
-                resource.close();
-            }
-        } catch (IOException ex) {
-            System.out.println("Erro = " + ex.getMessage());
-        }
     }
     
 }
