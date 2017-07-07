@@ -53,15 +53,19 @@ public class TerminalFrame extends JFrame
 
     private static final long serialVersionUID = 1L;
     private JPanel contentPane;
-    private Document doc;
+    private StyledDocument doc;
     String log, today;
     private JTextField textField;
     File raiz;
+    private PastComands acess;
     
     private ScrollPane terminalScroll;
     int POSICAO_SCROLL_X = 0;
     int POSICAO_SCROLL_Y = 0;
     private JScrollBar verticalBar, horizontalBar;
+    
+    int rowToAcess;
+    String saveState;
     
     Diretorio directory;
     
@@ -97,9 +101,8 @@ public class TerminalFrame extends JFrame
 		scrollPane.setViewportBorder(null);
 		getContentPane().add(scrollPane, BorderLayout.CENTER);
 		
-		JTextArea textArea = new JTextArea();
+		JTextPane textArea = new JTextPane();
 		textArea.setEditable(false);
-		textArea.setTabSize(4);
 		textArea.setBackground(Color.WHITE);
 		scrollPane.setViewportView(textArea);
 		setBounds(100, 100, 450, 300);
@@ -109,6 +112,7 @@ public class TerminalFrame extends JFrame
         verticalBar = scrollPane.getVerticalScrollBar();
 		
         directory.createLog();
+        acess = new PastComands();
         
         JLabel lblNewLabel = new JLabel();
 		lblNewLabel.setFont(new Font("Dialog", Font.PLAIN, 12));
@@ -116,13 +120,9 @@ public class TerminalFrame extends JFrame
 		scrollPane.setColumnHeaderView(lblNewLabel);
         lblNewLabel.setText(Diretorio.getDirInicial());
         
-        doc = textArea.getDocument();
+        doc = textArea.getStyledDocument();
         print("");
         
-//        textField = new JTextField();
-//        textField.setBounds(6, 29, 588, 26);
-//        contentPane.add(textField);
-//        textField.setColumns(10);
         textField.addKeyListener(new KeyAdapter()
         {
         	@Override
@@ -155,7 +155,8 @@ public class TerminalFrame extends JFrame
                 			if (raiz.exists() && raiz.isDirectory())
                 			{
                 				for(File f: raiz.listFiles()) {
-                    				if(f.isFile() || f.isDirectory()) 
+                					String dot = f.getName().substring(0, 1);
+                    				if((f.isFile() || f.isDirectory()) && !dot.equals(".")) 
                     				{
                     					sb.append(" -" + f.getName());
                     					sb.append("\n");
@@ -253,7 +254,7 @@ public class TerminalFrame extends JFrame
         			 * A PARTIR DESSE BLOCO ELSE TRATA A EXECUCAO DOS OUTROS COMANDOS DO TERMINAL E EXECUÇAO DE PROGRAMAS
         			 * 
         			 */
-        			else if (initialCommand.length == 1)
+        			else if (initialCommand.length == 1 && !(command.equals("")))
         			{
         				
         				try {
@@ -278,48 +279,47 @@ public class TerminalFrame extends JFrame
     			            		//textArea.append(line + " ");
     			                }
     			            }
-    			            textArea.append(str.toString() + " ");
+//    			            textArea.append(str.toString() + " ");
     			            textField.selectAll();
-    					} catch (IOException e1) {
-    						// TODO Auto-generated catch block
-    						System.out.print(e1.getMessage());
-    					}
-    					
+    					} 
+        				catch (IOException e1) {System.out.print(e1.getMessage());}
     				}
         			
         				/*
         				 * ATÉ AQUI
         				 */
-        			verticalBar.setValue(verticalBar.getMinimum());
         			
         			textField.setText("");
+        			acess.writeRegistry(command);
+        			
+        			rowToAcess = acess.numberOfRows();
         		}
-    			verticalBar.setValue(verticalBar.getMinimum());
-    			
-        		
-        		List<String> comandosExecutados = new ArrayList<String>();
-				comandosExecutados.add("comando 1");
-				comandosExecutados.add("comando 2");
-				int NumComExec = comandosExecutados.size();
-					
-        		
-        		if(e.getKeyCode() == KeyEvent.VK_UP) {
-					if(0 < NumComExec) {
-						textField.setText(comandosExecutados.get(NumComExec-1));
-						NumComExec = NumComExec -1;
-						//System.out.println(NumComExec);
-					}
+        		else if(e.getKeyCode() == KeyEvent.VK_UP) 
+        		{
+        			if(rowToAcess == acess.numberOfRows())
+        			{
+        				saveState = textField.getText().toString();
+        				String cloaded = acess.loadComand(rowToAcess);
+            			textField.setText(cloaded);
+        				rowToAcess--;
+        			}
+        			else if(rowToAcess == 4){}
+        			else
+        			{
+        				String cloaded = acess.loadComand(rowToAcess);
+            			textField.setText(cloaded);
+            			rowToAcess--;
+        			}
 				}
-				if(e.getKeyCode() == KeyEvent.VK_DOWN) {
-					if(NumComExec +1 < comandosExecutados.size()) {
-						NumComExec = NumComExec +1;
-						//System.out.println(NumComExec);
-						textField.setText(comandosExecutados.get(NumComExec));
-					}
-					else {
-						textField.setText("");
-						NumComExec = comandosExecutados.size();
-					}
+        		else if(e.getKeyCode() == KeyEvent.VK_DOWN) 
+				{
+        			if(rowToAcess == acess.numberOfRows()+1)
+        			{
+        				textField.setText(saveState);
+        			}
+        			String cloaded = acess.loadComand(rowToAcess);
+        			textField.setText(cloaded);
+					rowToAcess++;
 				}
         	}
         });

@@ -19,6 +19,8 @@ public class Diretorio {
 	private static final String dirInitial = System.getProperty("user.home") + "/";
 	private static final String user = System.getProperty("user.name");
 	private static final String osName = System.getProperty("os.name");
+	private static final File directory =  new File(dirInitial, "Log");
+
 	private static String dynamicDir = dirInitial;
 	private String actualDir;
 
@@ -64,7 +66,6 @@ public class Diretorio {
 	
 	public void createLog()
 	{
-		File directory = new File(dirInitial + "Log");
 		date = Calendar.getInstance().getTime(); 
     	String today = formater.format(date);
         if (directory.mkdir())
@@ -86,7 +87,6 @@ public class Diretorio {
 	
 	public void writeLog(String registry, int error)   //Erro = 1
 	{
-		File directory = new File(dirInitial + "Log");
 		date = Calendar.getInstance().getTime(); 
     	String today = formater.format(date);
         if (directory.exists())
