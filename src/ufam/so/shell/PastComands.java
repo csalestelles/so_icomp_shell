@@ -2,7 +2,6 @@ package ufam.so.shell;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -14,13 +13,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Scanner;
 
+//CLASSE QUE TRATA DA NAVEGACAO PELOS COMANDOS JA UTILIZADOS (SETAS PARA CIMA E PARA BAIXO)
 public class PastComands 
 {
 	
 	private static final String INITIAL_DIR = System.getProperty("user.home") + "/";
 	private static final String USER = System.getProperty("user.name");
-	private static String dynamicDir = INITIAL_DIR;
-	private String actualDir;
 	
 	private static final File directory =  new File(INITIAL_DIR, "Log");
 
@@ -30,6 +28,7 @@ public class PastComands
 	private FileWriter fileWriter;
 	private PrintWriter printWriter;
 	
+	//METODO CONSTRUTOR CRIAR O ARQUIVO DE REGISTRO DOS COMANDOS
 	public PastComands()
 	{
 		date = Calendar.getInstance().getTime(); 
@@ -55,7 +54,8 @@ public class PastComands
         }
 	}
 	
-	public void writeRegistry(String registry)   //Erro = 1
+	//ESCREVE O COMANDO NO REGISTRO
+	public void writeRegistry(String registry)  
 	{
 		if (directory.exists())
         {
@@ -73,9 +73,11 @@ public class PastComands
         }
 	}
 	
+	//CONTA O NUMERO DE LINHAS (COMANDOS) NO REGISTRO
 	public int numberOfRows() 
 	{
 		int numberOfRows = 0;
+		LineNumberReader linhaLeitura;
 		if (directory.exists())
 		{
 			File file = new File(directory, "ComandsRegistry.txt");
@@ -83,16 +85,19 @@ public class PastComands
 			{
 				try
 				{
-					LineNumberReader linhaLeitura = new LineNumberReader(new FileReader(file));
+					linhaLeitura = new LineNumberReader(new FileReader(file));
 					linhaLeitura.skip(file.length());
 					numberOfRows = linhaLeitura.getLineNumber();
+					linhaLeitura.close();
 				}
 				catch(IOException erro){erro.printStackTrace();}
 			}
 		}
+		
 		return numberOfRows;
 	}
 	
+	//CARREGA UM COMANDO A PARTIR DO NUMERO DA LINHA QUE É PASSADO COMO PARÂMETRO (ROW)
 	public String loadComand(int row)
 	{
 		int numberOfRows = 0;
@@ -103,7 +108,6 @@ public class PastComands
 			if(file.exists())
 			{
 				Scanner read = new Scanner(System.in);
-//				String nome = read.nextLine();
 				try 
 				{
 					FileReader fileReader = new FileReader(file);

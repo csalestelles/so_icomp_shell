@@ -13,22 +13,22 @@ import java.util.Date;
 
 public class Diretorio {
 	
-	public static final int ERROR = 1;
+	public static final int ERROR = 1;  //INTEIROS PARA REGISTRO NO LOG
 	public static final int WORKING = 0;
 	
-	private static final String dirInitial = System.getProperty("user.home") + "/";
-	private static final String user = System.getProperty("user.name");
-	private static final String osName = System.getProperty("os.name");
-	private static final File directory =  new File(dirInitial, "Log");
+	private static final String dirInitial = System.getProperty("user.home") + "/";  //ACESSA O DIRETORIO RAIZ
+	private static final String user = System.getProperty("user.name");  //ACESSA O USUARIO QUE ESTÁ UTILIZANDO O SISTEMA
+	private static final String osName = System.getProperty("os.name");  //ACESSA O NOME DO SO
+	private static final File directory =  new File(dirInitial, "Log");  //ACESSA O DIRETORIO ONDE ESTÁ O LOG
 
-	private static String dynamicDir = dirInitial;
+	private static String dynamicDir = dirInitial;  //DIRETORIO QUE VARIA DE ACORDO COM A UTILIZACAO DO USUARIO
 	private String actualDir;
 
 	Date date;
 	private DateFormat formater = new SimpleDateFormat("dd' de 'MMMMM' de 'yyyy' - 'HH':'mm':'ss'h'");
 	
-	private FileWriter fileWriter;
-	private PrintWriter printWriter;
+	private FileWriter fileWriter;   //ESCRITOR DO ARQUIVO
+	private PrintWriter printWriter;  //LEITOR DO ARQUIVO
 	
 	public String getActualDir() {
 		String[] splitedDir = dynamicDir.split("/");
@@ -64,6 +64,7 @@ public class Diretorio {
 		return getOsname() + ":" + getActualDir() + " " + getUser() + "$";
 	}
 	
+	//CRIA OR ARQUIVO DE LOG
 	public void createLog()
 	{
 		date = Calendar.getInstance().getTime(); 
@@ -85,6 +86,8 @@ public class Diretorio {
         }
 	}
 	
+	
+	//ESCREVE NO ARQUIVO DE LOG
 	public void writeLog(String registry, int error)   //Erro = 1
 	{
 		date = Calendar.getInstance().getTime(); 
@@ -108,6 +111,7 @@ public class Diretorio {
         }
 	}
 	
+	//RETORNA PARA O DIRETORIO PAI
 	public String backToFatherDir(String directory)
 	{
 		String[] splitedDir = directory.split("/");
@@ -117,6 +121,8 @@ public class Diretorio {
 		return dynamicDir;
 	}
 	
+	
+	//MOVE UM ARQUIVO OU DIRETORIO
 	public boolean move(String comand) throws IOException
 	{
 		String[] splitedComand = comand.split(" ");
@@ -124,18 +130,20 @@ public class Diretorio {
 		
 		String[] splitedOriginPath = splitedComand[1].split("/");
 		String firstDir = null;
+		
 		if(splitedOriginPath.length > 1)
-			firstDir = "/" + splitedOriginPath[0] + "/" + splitedOriginPath[1] + "/";
+			firstDir = "/" + splitedOriginPath[1] + "/" + splitedOriginPath[2] + "/";
 		else
-			firstDir = "/" + splitedOriginPath[0] + "/";
+			firstDir = splitedOriginPath[0] + "/"; //<-
 		
 		
 		String[] splitedDestinyPath = splitedComand[2].split("/");
 		String lastDir = null;
+		
 		if(splitedDestinyPath.length > 1)
-			lastDir = "/" + splitedDestinyPath[0] + "/" + splitedDestinyPath[1] + "/";
+			lastDir = "/" + splitedDestinyPath[1] + "/" + splitedDestinyPath[2] + "/";  //<- faltou "/" no inicio
 		else
-			lastDir = "/" + splitedDestinyPath[0] + "/";
+			lastDir = splitedDestinyPath[0] + "/";
 			
 		File destinyPath = null;
 		File file = null;
@@ -158,6 +166,51 @@ public class Diretorio {
 		}
 		else
 			return false;
+	}
+	
+	//ABRE UM ARQUIVO (EX.: .txt , .pdf)
+	public File openFile(String command)
+	{
+		int contador = 0;
+		String[] splitedCommand = command.split(" ");
+		
+		String[] pathFile = splitedCommand[1].split("/");
+		String dir;
+		
+		if(pathFile.length > 1)
+			dir = "/" + pathFile[1] + "/" + pathFile[2] + "/";
+		else
+			dir = pathFile[0] + "/";
+		
+		String destinyPath = "";
+		File file = null;
+		String fileName = pathFile[pathFile.length-1];
+		pathFile[pathFile.length-1] = null;
+		String path = "";
+		
+		while(contador < (pathFile.length-1))
+		{
+			if(contador == 0)
+			{contador++;}
+			else
+			{
+				path += "/" + pathFile[contador];
+				contador++;
+			}	
+		}
+		path += "/";
+		
+		file = new File(path, fileName);
+		
+		if(dir.equals(dirInitial))
+			destinyPath = path;
+		else
+			destinyPath = getDynamicDir() + path + "/";
+		
+		file = new File(destinyPath, fileName);
+		
+		return file;
+			
 	}
 
 }

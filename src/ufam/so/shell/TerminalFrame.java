@@ -1,76 +1,54 @@
 package ufam.so.shell;
 
+/*
+ * Alunos:
+ *              CAIO ARTHUR SALES TELLES      21453444
+ *              GUILHERME PEÑA CÉSPEDES   
+ *              FELIPE DE MENEZES SANTOS      21453441
+ */
+
 import java.awt.EventQueue;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.border.EmptyBorder;
-import javax.swing.text.Document;
 import javax.swing.text.StyledDocument;
-
-import java.io.InputStream;
 
 import javax.swing.JTextPane;
 
-import java.io.FileWriter;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Locale;
-import java.util.Scanner;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
+
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.File;
-import java.io.FileOutputStream;
 
 import javax.swing.JTextField;
 import javax.swing.JLabel;
 import java.awt.Font;
-import java.awt.Point;
-import java.awt.ScrollPane;
+
 
 public class TerminalFrame extends JFrame
 {
-
-    private static final long serialVersionUID = 1L;
-    private JPanel contentPane;
-    private StyledDocument doc;
-    String log, today;
+	private static final long serialVersionUID = 1L;
+	private StyledDocument doc;
     private JTextField textField;
-    File raiz;
+    private File raiz;
     private PastComands acess;
     
-    private ScrollPane terminalScroll;
-    int POSICAO_SCROLL_X = 0;
-    int POSICAO_SCROLL_Y = 0;
-    private JScrollBar verticalBar, horizontalBar;
-    
-    int rowToAcess;
-    String saveState;
+    int rowToAcess;      
+    private String saveState;     
     
     Diretorio directory;
     
-    String directoryString = Diretorio.getDirInicial();
+    String directoryString = Diretorio.getDirInicial();    //O terminalSimulator parte do diretório do usuário
+    													   //que é acessado a partir do método getDirInicial().
 
+    /*
+     *          FUNCAO MAIN
+     */
     public static void main(String[] args) {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -85,12 +63,20 @@ public class TerminalFrame extends JFrame
     }
 
     public TerminalFrame() throws IOException {
+    	
+    	
+    	/*
+    	 * Itens da interface gráfica do terminalSimulator 
+    	 */
+    	
     	directory = new Diretorio();
     	setForeground(Color.WHITE);
-		setTitle("JavaTerminal");
+		setTitle("TerminalSimulator");
 		setBackground(Color.DARK_GRAY);
 		getContentPane().setBackground(Color.WHITE);
 		getContentPane().setLayout(new BorderLayout(0, 0));
+		setResizable(false);
+		this.setSize(600, 450);
 		
 		textField = new JTextField();
 		
@@ -105,14 +91,13 @@ public class TerminalFrame extends JFrame
 		textArea.setEditable(false);
 		textArea.setBackground(Color.WHITE);
 		scrollPane.setViewportView(textArea);
-		setBounds(100, 100, 450, 300);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		horizontalBar = scrollPane.getHorizontalScrollBar();
-        verticalBar = scrollPane.getVerticalScrollBar();
 		
-        directory.createLog();
-        acess = new PastComands();
+        directory.createLog();     //Cria o arquivo de Log que irá registrar os comandos utilizados e sua data
+        
+        acess = new PastComands(); //Cria um arquivo que armazena somente os comandos para serem acessados apertando
+        						   //a seta pra cima ou pra baixo
         
         JLabel lblNewLabel = new JLabel();
 		lblNewLabel.setFont(new Font("Dialog", Font.PLAIN, 12));
@@ -128,32 +113,37 @@ public class TerminalFrame extends JFrame
         	@Override
         	public void keyPressed(KeyEvent e)
         	{
-        		if(e.getKeyCode() == KeyEvent.VK_ENTER)
+        		if(e.getKeyCode() == KeyEvent.VK_ENTER)   //A partir daqui tratam-se os comandos
         		{
         			String command = textField.getText();
         			String[] initialCommand = command.split(" ");
-        			if (initialCommand[0].equals("ls") && initialCommand.length <= 2)     //listar arquivos e diretorios
+        			//COMANDO LS
+        			if (initialCommand[0].equals("ls") && initialCommand.length <= 2)     
         			{
         				StringBuilder sb = new StringBuilder();
+        				//SE O LS NÃO VIER ACOMPANHADO DE NENHUM DIRETÓRIO ESPECIFICADO
         				if(initialCommand.length == 1)
         				{
-        					raiz = new File(Diretorio.getDynamicDir());
-        					for(File f: raiz.listFiles()) {
+        					raiz = new File(Diretorio.getDynamicDir());  //ACESSA O DIRETORIO ATUAL
+        					for(File f: raiz.listFiles()) {              //LOOP PARA TODOS OS ARQUIVOS
         						String dot = f.getName().substring(0, 1);
+        						//ADICIONA NO STRINGBUILDER CADA ARQUIVO QUE CORRESPONDE AS CONDICOES DO IF ABAIXO
                 				if((f.isFile() || f.isDirectory()) && !dot.equals(".")) 
                 				{
-                					sb.append(" -" + f.getName());
+                					sb.append(" -" + f.getName());  
                 					sb.append("\n");
                 				}
                 			}
-        					directory.writeLog(command, Diretorio.WORKING);
-                			print("\n" + sb.toString());
+        					directory.writeLog(command, Diretorio.WORKING);  //ESCREVE NO LOG
+                			print(command + "\n" + sb.toString());   //EXIBE O RESULTADO NO TERMINALSIMULATOR
         				}
+        				//SE O LS VIER ACOMPANHADO DE UM DIRETORIO A SER BUSCADO
         				else
         				{
         					raiz = new File(Diretorio.getDynamicDir() + initialCommand[1]);
-                			if (raiz.exists() && raiz.isDirectory())
+                			if (raiz.exists() && raiz.isDirectory())   //SE EXISTE O DIRETORIO 
                 			{
+                				//A PARTIR DAQUI O CODIGO É SEMELHANTE AO ANTERIOR
                 				for(File f: raiz.listFiles()) {
                 					String dot = f.getName().substring(0, 1);
                     				if((f.isFile() || f.isDirectory()) && !dot.equals(".")) 
@@ -163,8 +153,9 @@ public class TerminalFrame extends JFrame
                     				}
                     			}
                 				directory.writeLog(command, Diretorio.WORKING);
-                    			print(initialCommand[1] + "\n" + sb.toString());
+                    			print(command + "\n" + sb.toString());
                 			}
+                			//CASO NAO OCORRA NENHUM DOS DOIS CASOS ACIMA O TERMINAL REGISTRA UM ERRO
                 			else
                 			{
                 				directory.writeLog(command, Diretorio.ERROR);
@@ -173,22 +164,28 @@ public class TerminalFrame extends JFrame
                 			}
         				}
         			}
+        			//COMANDO CD
         			else if (initialCommand[0].equals("cd") && initialCommand.length <= 2)      //nav -> NAVegar no Diretório
         			{
+        				//CD ..
         				if (initialCommand[1].equals(".."))
         				{
+        					//RETORNA PARA O DIRETORIO PAI
         					lblNewLabel.setText(directory.backToFatherDir(Diretorio.getDynamicDir()));
         					Diretorio.setDynamicDir(lblNewLabel.getText());
-        					print("");
+        					print(command);
         					directory.writeLog(command, Diretorio.WORKING);
         				}
+        				//CD ~
         				else if (initialCommand[1].equals("~"))
         				{
+        					//RETORNA PARA O DIRETORIO RAIZ (O DIRETORIO RAIZ QUE FOI UTILIZADO FOI: /Users/caiotelles/)
         					directory.writeLog(command, Diretorio.WORKING);
         					Diretorio.setDynamicDir(Diretorio.getDirInicial());
-        					print("");
+        					print(command);
         					lblNewLabel.setText(Diretorio.getDynamicDir());
         				}
+        				//CD diretorio
         				else 
         				{
         					File dir = new File(Diretorio.getDynamicDir() + initialCommand[1] + "/");
@@ -197,7 +194,7 @@ public class TerminalFrame extends JFrame
         						Diretorio.setDynamicDir(Diretorio.getDynamicDir() + initialCommand[1]);
         						lblNewLabel.setText(Diretorio.getDynamicDir());
         						directory.writeLog(command, Diretorio.WORKING);
-        						print("");
+        						print(command);
         					}
         					else
         					{
@@ -207,12 +204,13 @@ public class TerminalFrame extends JFrame
         				}
         					
         			}
+        			//COMANDO PWD
         			else if(initialCommand[0].equals("pwd"))
         			{
         				if(initialCommand.length == 1)
         				{
         					directory.writeLog(command, Diretorio.WORKING);
-        					print(Diretorio.getDynamicDir());
+        					print(command + Diretorio.getDynamicDir());
         				}
         				else
         				{
@@ -220,24 +218,26 @@ public class TerminalFrame extends JFrame
         					print(command + " -- erro ao acessar Diretório atual");
         				}
         			}
+        			//COMANDO CLEAR
         			else if(initialCommand[0].equals("clear") && initialCommand.length == 1)
         			{
         				int counterClear = 0;
-        				while(counterClear < 33)
+        				while(counterClear < 38)
         				{
         					printClear();
         					counterClear++;
         				}
         				print("");
         			}
+        			//COMANDO MV
         			else if(initialCommand[0].equals("mv") && initialCommand.length == 3)
         			{
         				try 
-        				{
+        				{//MOVE ARQUIVOS E DIRETORIOS
 							if(directory.move(command))
 							{
 								directory.writeLog(command, Diretorio.WORKING);
-								print("");
+								print(command);
 							}
 							else
 							{
@@ -254,6 +254,35 @@ public class TerminalFrame extends JFrame
         			 * A PARTIR DESSE BLOCO ELSE TRATA A EXECUCAO DOS OUTROS COMANDOS DO TERMINAL E EXECUÇAO DE PROGRAMAS
         			 * 
         			 */
+        			
+        			// ABRIR ARQUIVOS 
+        			else if(initialCommand[0].equals("open") && initialCommand.length == 2)
+        			{
+        				try
+        				{
+        					File fileToOpen = directory.openFile(command);
+        					if (fileToOpen.isFile())
+        					{
+        						java.awt.Desktop.getDesktop().open(directory.openFile(command));
+        						directory.writeLog(command, Diretorio.WORKING);
+        						print(command);
+        					}
+        					else
+        					{
+        						directory.writeLog(command, Diretorio.ERROR);
+								print(command + " -- arquivo não existe");
+        					}
+        						
+        				}
+        				catch(IOException error){error.printStackTrace();}
+        			}
+        			
+        			
+        			
+        			//FIM
+        			
+        			
+        			
         			else if (initialCommand.length == 1 && !(command.equals("")))
         			{
         				
@@ -289,11 +318,14 @@ public class TerminalFrame extends JFrame
         				 * ATÉ AQUI
         				 */
         			
-        			textField.setText("");
-        			acess.writeRegistry(command);
         			
-        			rowToAcess = acess.numberOfRows();
+        			textField.setText("");   //LIMPA A AREA DE COMANDOS APÓS A EXECUCAO
+        			
+        			acess.writeRegistry(command);  //REGISTRA O COMANDO PARA QUE POSSA SER ACESSADO DEPOIS
+        			rowToAcess = acess.numberOfRows();  //INTEIRO UTILIZADO NO ACESSO AOS COMANDOS QUE JÁ FORAM UTILZADOS
         		}
+        		
+        		//NAVEGA PELOS COMANDO JÁ UTILIZADOS; SETAS PARA CIMA E PARA BAIXO
         		else if(e.getKeyCode() == KeyEvent.VK_UP) 
         		{
         			if(rowToAcess == acess.numberOfRows())
@@ -322,10 +354,10 @@ public class TerminalFrame extends JFrame
 					rowToAcess++;
 				}
         	}
-        });
-        
+        });  
     }
-
+    
+    //MÉTODO QUE TRATA DE EXIBIR OS RESULTADOS DOS COMANDOS NO TERMINAL
     public void print(String s) {
         try 
         {
