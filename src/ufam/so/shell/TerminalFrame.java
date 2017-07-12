@@ -188,6 +188,12 @@ public class TerminalFrame extends JFrame
         				//CD diretorio
         				else 
         				{
+        					String commandd = "" + initialCommand[1].charAt(initialCommand.length-1);
+        					if (!commandd.equals("/"))
+        					{
+        						initialCommand[1] += "/";
+        					}
+        					
         					File dir = new File(Diretorio.getDynamicDir() + initialCommand[1] + "/");
         					if(dir.exists() && dir.isDirectory())
         					{
@@ -264,6 +270,27 @@ public class TerminalFrame extends JFrame
         					if (fileToOpen.isFile())
         					{
         						java.awt.Desktop.getDesktop().open(directory.openFile(command));
+        						directory.writeLog(command, Diretorio.WORKING);
+        						print(command);
+        					}
+        					else
+        					{
+        						directory.writeLog(command, Diretorio.ERROR);
+								print(command + " -- arquivo não existe");
+        					}
+        						
+        				}
+        				catch(IOException error){error.printStackTrace();}
+        			}
+        			//ABERTURA DE APLICATIVOS FUNCIONA SOMENTE PARA MAC!!!
+        			else if(initialCommand[0].equals("open") && initialCommand[1].equals("-app") && initialCommand.length == 3)
+        			{
+        				try
+        				{
+        					File fileToOpen = new File("/Applications/" + initialCommand[2] + ".app/Contents/MacOS/" + initialCommand[2]);
+        					if (fileToOpen.isFile())
+        					{
+        						java.awt.Desktop.getDesktop().open(fileToOpen);
         						directory.writeLog(command, Diretorio.WORKING);
         						print(command);
         					}
